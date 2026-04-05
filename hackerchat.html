@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>REALTIME CHAT | No Refresh</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000000;
+            font-family: 'Courier New', monospace;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+        .app {
+            max-width: 550px;
+            width: 100%;
+            background: #0a0c0f;
+            border: 1px solid #00ff41;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+        }
+        .header {
+            background: #0a0c0f;
+            padding: 14px;
+            text-align: center;
+            border-bottom: 1px solid #00ff41;
+        }
+        .header h1 {
+            color: #00ff41;
+            font-size: 18px;
+        }
+        /* Login */
+        .login-panel {
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .login-panel input {
+            padding: 12px;
+            background: #0a0c0f;
+            border: 1px solid #00ff41;
+            border-radius: 4px;
+            color: #00ff41;
+            font-family: monospace;
+        }
+        .login-panel button {
+            padding: 12px;
+            background: #0a0c0f;
+            border: 1px solid #00ff41;
+            border-radius: 4px;
+            color: #00ff41;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .login-panel button:hover {
+            background: #00ff41;
+            color: #000;
+        }
+        .error-msg {
+            color: #ff4444;
+            font-size: 12px;
+            text-align: center;
+        }
+        /* Chat */
+        .chat-panel {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+        }
+        .online-status {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #00ff41;
+            color: #00ff41;
+            font-size: 11px;
+        }
+        .chat-tabs {
+            display: flex;
+            border-bottom: 1px solid #00ff41;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            color: #00ff4166;
+            font-weight: bold;
+        }
+        .tab.active {
+            color: #00ff41;
+            border-bottom: 2px solid #00ff41;
+        }
+        .user-list {
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            border-bottom: 1px solid #00ff41;
+        }
+        .user-chip {
+            border: 1px solid #00ff41;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #00ff41;
+        }
+        .user-chip.active {
+            background: #00ff41;
+            color: #000;
+        }
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #050505;
+        }
+        .bubble {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-left: 3px solid #00ff41;
+            background: #0a0c0f;
+            color: #00ff41;
+            font-size: 13px;
+            align-self: flex-start;
+        }
+        .my-bubble {
+            border-left-color: #ff4444;
+            align-self: flex-end;
+        }
+        .sender-name {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+        .my-bubble .sender-name {
+            text-align: right;
+        }
+        .msg-text {
+            font-size: 13px;
+        }
+        .msg-time {
+            font-size: 8px;
+            opacity: 0.5;
+            margin-top: 4px;
+            text-align: right;
+        }
+        .input-area {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid #00ff41;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            background: #050505;
+            border: 1px solid #00ff41;
+            border-radius: 4px;
+            color: #00ff41;
+            font-family: monospace;
+        }
+        .input-area button {
+            padding: 10px 18px;
+            background: #0a0c0f;
+            border: 1px solid #00ff41;
+            border-radius: 4px;
+            color: #00ff41;
+            cursor: pointer;
+        }
+        .logout-btn {
+            border: 1px solid #ff4444;
+            margin: 12px;
+            padding: 8px;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #ff4444;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="header"><h1>┌─[REALTIME_CHAT]</h1></div>
+
+    <!-- LOGIN -->
+    <div id="loginPanel">
+        <div class="login-panel">
+            <input type="text" id="loginUser" placeholder="USERNAME">
+            <input type="password" id="loginPass" placeholder="PASSWORD (min 4)">
+            <button id="doLoginBtn">$> LOGIN</button>
+            <button id="doSignupBtn">$> SIGNUP</button>
+            <div id="loginMsg" class="error-msg"></div>
+        </div>
+    </div>
+
+    <!-- CHAT (အကောင့်ဝင်မှပြမယ်) -->
+    <div id="chatPanel" class="chat-panel">
+        <div class="online-status" id="onlineStatus">[ OFFLINE ]</div>
+        <div class="chat-tabs">
+            <div class="tab active" id="groupTab">[ GROUP ]</div>
+            <div class="tab" id="privateTab">[ PRIVATE ]</div>
+        </div>
+        <div id="userListContainer" class="user-list hidden"></div>
+        <div class="messages-area" id="messagesArea">
+            <div class="bubble">> SYSTEM READY</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="chatInput" placeholder="> TYPE MESSAGE">
+            <button id="sendBtn">[ SEND ]</button>
+        </div>
+        <div class="logout-btn" id="logoutBtn">[ EXIT ]</div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs, addDoc, onSnapshot, orderBy, deleteDoc, Timestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCIJWCAXEeThg8kxMi_mPgGbzoDc7nC3VA",
+        authDomain: "chat-application-e0fad.firebaseapp.com",
+        projectId: "chat-application-e0fad",
+        storageBucket: "chat-application-e0fad.firebasestorage.app",
+        messagingSenderId: "356894196505",
+        appId: "1:356894196505:web:95277f7457aa1336cabb88",
+        measurementId: "G-YEHRW4X50P"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // DOM
+    const loginPanel = document.getElementById('loginPanel');
+    const chatPanel = document.getElementById('chatPanel');
+    const loginUser = document.getElementById('loginUser');
+    const loginPass = document.getElementById('loginPass');
+    const doLoginBtn = document.getElementById('doLoginBtn');
+    const doSignupBtn = document.getElementById('doSignupBtn');
+    const loginMsg = document.getElementById('loginMsg');
+    const messagesArea = document.getElementById('messagesArea');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const groupTab = document.getElementById('groupTab');
+    const privateTab = document.getElementById('privateTab');
+    const userListContainer = document.getElementById('userListContainer');
+    const onlineStatus = document.getElementById('onlineStatus');
+
+    let currentUser = null;
+    let currentMode = "group";
+    let currentPrivateWith = null;
+    let unsubscribeMessages = null;
+    let allUsers = [];
+
+    // Helper
+    async function userExists(username) {
+        const q = query(collection(db, "chat_users"), where("username", "==", username));
+        const snap = await getDocs(q);
+        return !snap.empty;
+    }
+
+    async function getUserDoc(username) {
+        const q = query(collection(db, "chat_users"), where("username", "==", username));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, data: snap.docs[0].data() };
+    }
+
+    async function signup(username, password) {
+        if (password.length < 4) throw new Error("PASSWORD >= 4 CHARS");
+        const exists = await userExists(username);
+        if (exists) throw new Error("USERNAME EXISTS");
+        await addDoc(collection(db, "chat_users"), {
+            username: username,
+            password: password,
+            createdAt: new Date()
+        });
+    }
+
+    async function deleteOldMessages() {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const q = query(collection(db, "chat_messages"), where("timestamp", "<", Timestamp.fromDate(sevenDaysAgo)));
+        const snap = await getDocs(q);
+        snap.forEach(async (docSnap) => { await deleteDoc(docSnap.ref); });
+    }
+
+    async function loadUsersList() {
+        const q = query(collection(db, "chat_users"));
+        const snap = await getDocs(q);
+        allUsers = [];
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.username !== currentUser.username) {
+                allUsers.push({ username: data.username });
+            }
+        });
+        renderUserList();
+    }
+
+    function renderUserList() {
+        userListContainer.innerHTML = '';
+        if (allUsers.length === 0) {
+            userListContainer.innerHTML = '<div style="color:#00ff4166;font-size:11px;">[ NO OTHER USERS ]</div>';
+            return;
+        }
+        allUsers.forEach(user => {
+            const chip = document.createElement('div');
+            chip.className = 'user-chip';
+            if (currentPrivateWith === user.username) chip.classList.add('active');
+            chip.innerText = user.username;
+            chip.onclick = () => {
+                currentPrivateWith = user.username;
+                renderUserList();
+                loadMessages();
+            };
+            userListContainer.appendChild(chip);
+        });
+    }
+
+    // REAL-TIME MESSAGES - No Refresh Needed!
+    function loadMessages() {
+        if (unsubscribeMessages) unsubscribeMessages();
+        
+        if (currentMode === "group") {
+            const q = query(collection(db, "chat_messages"), where("room", "==", "global"), orderBy("timestamp", "asc"));
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                renderMessages(snapshot.docs);
+            });
+        } else {
+            if (!currentPrivateWith) {
+                messagesArea.innerHTML = '<div class="bubble">[ SELECT USER ]</div>';
+                return;
+            }
+            const roomName = [currentUser.username, currentPrivateWith].sort().join('_');
+            const q = query(collection(db, "chat_messages"), where("room", "==", roomName), orderBy("timestamp", "asc"));
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                renderMessages(snapshot.docs);
+            });
+        }
+    }
+
+    function renderMessages(docs) {
+        if (!messagesArea) return;
+        messagesArea.innerHTML = '';
+        if (docs.length === 0 && currentMode === "private") {
+            messagesArea.innerHTML = '<div class="bubble">[ START PRIVATE CONVERSATION ]</div>';
+        }
+        docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const div = document.createElement('div');
+            div.className = 'bubble';
+            if (data.sender === currentUser.username) div.classList.add('my-bubble');
+            
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'sender-name';
+            senderDiv.innerText = data.sender;
+            const textDiv = document.createElement('div');
+            textDiv.className = 'msg-text';
+            textDiv.innerText = data.text;
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'msg-time';
+            const date = data.timestamp?.toDate();
+            timeDiv.innerText = date ? `${date.toLocaleTimeString()}` : '';
+            
+            div.appendChild(senderDiv);
+            div.appendChild(textDiv);
+            div.appendChild(timeDiv);
+            messagesArea.appendChild(div);
+        });
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+
+    async function sendMessage(text) {
+        if (!text.trim()) return;
+        let room = "global";
+        if (currentMode === "private") {
+            if (!currentPrivateWith) {
+                alert("SELECT USER FIRST");
+                return;
+            }
+            room = [currentUser.username, currentPrivateWith].sort().join('_');
+        }
+        await addDoc(collection(db, "chat_messages"), {
+            sender: currentUser.username,
+            text: text,
+            room: room,
+            timestamp: Timestamp.now()
+        });
+        chatInput.value = '';
+        deleteOldMessages();
+        // No refresh needed - onSnapshot will update automatically!
+    }
+
+    function switchMode(mode) {
+        currentMode = mode;
+        if (mode === "group") {
+            groupTab.classList.add('active');
+            privateTab.classList.remove('active');
+            userListContainer.classList.add('hidden');
+            currentPrivateWith = null;
+        } else {
+            privateTab.classList.add('active');
+            groupTab.classList.remove('active');
+            userListContainer.classList.remove('hidden');
+            if (allUsers.length > 0 && !currentPrivateWith) {
+                currentPrivateWith = allUsers[0].username;
+                renderUserList();
+            }
+        }
+        loadMessages();
+    }
+
+    async function login(username, password) {
+        const user = await getUserDoc(username);
+        if (!user) throw new Error("USER NOT FOUND");
+        if (user.data.password !== password) throw new Error("WRONG PASSWORD");
+        currentUser = { username: username, uid: user.id };
+        
+        loginPanel.style.display = 'none';
+        chatPanel.style.display = 'flex';
+        onlineStatus.innerHTML = `[ ONLINE ] ${username}`;
+        
+        await loadUsersList();
+        switchMode("group");
+    }
+
+    function logout() {
+        if (unsubscribeMessages) unsubscribeMessages();
+        currentUser = null;
+        loginPanel.style.display = 'block';
+        chatPanel.style.display = 'none';
+        loginUser.value = '';
+        loginPass.value = '';
+        loginMsg.innerHTML = '';
+    }
+
+    // Events
+    doLoginBtn.onclick = async () => {
+        const u = loginUser.value.trim();
+        const p = loginPass.value.trim();
+        if (!u || !p) { loginMsg.innerHTML = "FILL ALL FIELDS"; return; }
+        try { await login(u, p); loginMsg.innerHTML = ''; } 
+        catch(e) { loginMsg.innerHTML = e.message; }
+    };
+
+    doSignupBtn.onclick = async () => {
+        const u = loginUser.value.trim();
+        const p = loginPass.value.trim();
+        if (!u || !p) { loginMsg.innerHTML = "FILL ALL FIELDS"; return; }
+        try {
+            await signup(u, p);
+            loginMsg.innerHTML = "✅ ACCOUNT CREATED! NOW LOGIN.";
+            loginPass.value = '';
+        } catch(e) { loginMsg.innerHTML = e.message; }
+    };
+
+    groupTab.onclick = () => switchMode("group");
+    privateTab.onclick = () => switchMode("private");
+    sendBtn.onclick = () => sendMessage(chatInput.value);
+    chatInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(chatInput.value); });
+    logoutBtn.onclick = () => logout();
+
+    // Initial
+    loginPanel.style.display = 'block';
+    chatPanel.style.display = 'none';
+</script>
+</body>
+</html>
